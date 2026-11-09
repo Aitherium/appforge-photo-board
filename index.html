@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Photo Board</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f4ec;
+            color: #2c2c2c;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #fdf6e3;
+            border-bottom: 2px solid #e5d9c5;
+            padding: 1.2rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #5a4a3a;
+            letter-spacing: 0.5px;
+            margin-right: auto;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #fff;
+            border: 1px solid #ddd0bc;
+            border-radius: 30px;
+            padding: 0.3rem 0.8rem;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+        .filter-group label {
+            font-size: 0.85rem;
+            color: #7a6a5a;
+            font-weight: 500;
+        }
+
+        .filter-group input {
+            border: none;
+            outline: none;
+            padding: 0.4rem 0.5rem;
+            font-size: 0.95rem;
+            border-radius: 20px;
+            background: transparent;
+            color: #2c2c2c;
+            min-width: 180px;
+        }
+
+        .add-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: auto;
+        }
+
+        .add-form input[type="url"] {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd0bc;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            width: 260px;
+            outline: none;
+            background: #fff;
+            transition: border 0.2s;
+        }
+
+        .add-form input[type="url"]:focus {
+            border-color: #b8a58a;
+        }
+
+        .add-form button {
+            background: #5a4a3a;
+            color: #fdf6e3;
+            border: none;
+            border-radius: 30px;
+            padding: 0.5rem 1.2rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .add-form button:hover {
+            background: #3f3226;
+            transform: scale(1.02);
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            /* awbeads spatial canvas: a free-form grid */
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.5rem;
+            align-content: start;
+            background: #f8f4ec;
+            position: relative;
+        }
+
+        .photo-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e8ddcd;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        .photo-card.hidden {
+            display: none;
+        }
+
+        .photo-card .image-wrap {
+            width: 100%;
+            height: 190px;
+            background: #f0e8d8;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: opacity 0.3s;
+        }
+
+        .photo-card .image-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #a99b8a;
+            font-size: 0.85rem;
+            background: #f0e8d8;
+        }
+
+        .photo-card .card-body {
+            padding: 0.8rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .photo-card .tag-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            min-height: 1.2em;
+        }
+
+        .photo-card .tag-pill {
+            background: #e8dcc8;
+            color: #4a3a2a;
+            font-size: 0.75rem;
+            padding: 0.15rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .photo-card .tag-input-row {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .photo-card .tag-input-row input {
+            flex: 1;
+            padding: 0.4rem 0.7rem;
+            border: 1px solid #ddd0bc;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            outline: none;
+            background: #fcf9f4;
+        }
+
+        .photo-card .tag-input-row input:focus {
+            border-color: #b8a58a;
+        }
+
+        .photo-card .tag-input-row button {
+            background: #b8a58a;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .photo-card .tag-input-row button:hover {
+            background: #9a866c;
+        }
+
+        .photo-card .remove-btn {
+            background: none;
+            border: none;
+            color: #b08a6a;
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-align: right;
+            padding: 0;
+            text-decoration: underline;
+            opacity: 0.7;
+        }
+
+        .photo-card .remove-btn:hover {
+            opacity: 1;
+        }
+
+        footer {
+            background: #fdf6e3;
+            border-top: 2px solid #e5d9c5;
+            padding: 0.8rem 2rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #7a6a5a;
+        }
+
+        footer code {
+            background: #ece3d3;
+            padding: 0.1rem 0.4rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #a99b8a;
+            font-size: 1.1rem;
+            border: 2px dashed #d8cbb8;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.4);
+        }
+
+        .empty-state.hidden {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 1rem;
+            }
+            .add-form {
+                margin-left: 0;
+                flex-wrap: wrap;
+            }
+            .add-form input[type="url"] {
+                flex: 1;
+                width: auto;
+            }
+            main {
+                padding: 1rem;
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📸 Family Photo Board</h1>
+    <div class="filter-group">
+        <label for="filter-tag">Filter by tag:</label>
+        <input type="text" id="filter-tag" placeholder="e.g. vacation, birthday...">
+    </div>
+    <form class="add-form" id="add-form">
+        <input type="url" id="photo-url" placeholder="Paste a photo URL..." required>
+        <button type="submit">Add Photo</button>
+    </form>
+</header>
+
+<main id="photo-canvas">
+    <div class="empty-state" id="empty-state">Add some photos to start the family board ✨</div>
+</main>
+
+<footer>
+    <span>Drop photo URLs, tag them, filter by tag. </span>
+    <span>Simple string match — no persistence.</span>
+    <span style="display:block; margin-top:4px;"><code>awbeads</code> spatial canvas · <code>awvision</code> photo-aware · <code>awkno</code> family lore</span>
+</footer>
+
+<script>
+    (function() {
+        // In-memory data model
+        let photos = []; // {id, url, tags: []}
+        let nextId = 1;
+
+        // DOM refs
+        const canvas = document.getElementById('photo-canvas');
+        const emptyState = document.getElementById('empty-state');
+        const filterInput = document.getElementById('filter-tag');
+        const addForm = document.getElementById('add-form');
+        const urlInput = document.getElementById('photo-url');
+
+        // Current filter string (lowercased)
+        let currentFilter = '';
+
+        // --- Core: render based on current filter ---
+        function render() {
+            // Clear canvas (but keep empty-state as child)
+            // We'll rebuild cards, but keep empty-state element
+            const cards = canvas.querySelectorAll('.photo-card');
+            cards.forEach(c => c.remove());
+
+            const filter = currentFilter.toLowerCase().trim();
+
+            let visibleCount = 0;
+
+            photos.forEach(photo => {
+                // Check if photo matches filter
+                const matches = filter === '' || photo.tags.some(tag => tag.toLowerCase().includes(filter));
+                if (matches) visibleCount++;
+
+                const card = createCard(photo, matches);
+                canvas.appendChild(card);
+            });
+
+            // Show/hide empty state
+            emptyState.classList.toggle('hidden', photos.length > 0);
+            // Update empty state text if filter hides all
+            if (photos.length > 0 && visibleCount === 0) {
+                emptyState.textContent = 'No photos match this tag filter 🔍';
+                emptyState.classList.remove('hidden');
+            } else if (photos.length === 0) {
+                emptyState.textContent = 'Add some photos to start the family board ✨';
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+        }
+
+        // --- Create a single photo card element ---
+        function createCard(photo, isVisible) {
+            const card = document.createElement('div');
+            card.className = 'photo-card' + (isVisible ? '' : ' hidden');
+            card.dataset.id = photo.id;
+
+            // Image wrap
+            const imgWrap = document.createElement('div');
+            imgWrap.className = 'image-wrap';
+
+            const img = document.createElement('img');
+            img.src = photo.url;
+            img.alt = 'Family photo';
+            img.loading = 'lazy';
+
+            // Handle image load error
+            img.onerror = function() {
+                // Replace with placeholder
+                const placeholder = document.createElement('div');
+                placeholder.className = 'image-placeholder';
+                placeholder.textContent = '⚠️ Image not available';
+                imgWrap.appendChild(placeholder);
+                img.remove();
+            };
+
+            imgWrap.appendChild(img);
+
+            // Card body
+            const body = document.createElement('div');
+            body.className = 'card-body';
+
+            // Tag display
+            const tagDisplay = document.createElement('div');
+            tagDisplay.className = 'tag-display';
+
+            // Tag pills
+            photo.tags.forEach(tag => {
+                const pill = document.createElement('span');
+                pill.className = 'tag-pill';
+                pill.textContent = tag;
+                tagDisplay.appendChild(pill);
+            });
+
+            // Tag input row
+            const tagRow = document.createElement('div');
+            tagRow.className = 'tag-input-row';
+
+            const tagInput = document.createElement('input');
+            tagInput.type = 'text';
+            tagInput.placeholder = 'Add tag...';
+            tagInput.dataset.id = photo.id;
+
+            const addTagBtn = document.createElement('button');
+            addTagBtn.textContent = 'Add';
+            addTagBtn.dataset.id = photo.id;
+
+            tagRow.appendChild(tagInput);
+            tagRow.appendChild(addTagBtn);
+
+            // Remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.textContent = 'remove';
+            removeBtn.dataset.id = photo.id;
+
+            body.appendChild(tagDisplay);
+            body.appendChild(tagRow);
+            body.appendChild(removeBtn);
+
+            card.appendChild(imgWrap);
+            card.appendChild(body);
+
+            // --- Event handlers (delegated via data-id, but we bind directly) ---
+            // Add tag button
+            addTagBtn.addEventListener('click', function() {
+                const newTag = tagInput.value.trim();
+                if (!newTag) return;
+                const photoObj = photos.find(p => p.id === photo.id);
+                if (!photoObj) return;
+                // Avoid duplicate exact tags
+                if (!photoObj.tags.includes(newTag)) {
+                    photoObj.tags.push(newTag);
+                }
+                tagInput.value = '';
+                render();
+            });
+
+            // Enter key in tag input
+            tagInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addTagBtn.click();
+                }
+            });
+
+            // Remove button
+            removeBtn.addEventListener('click', function() {
+                photos = photos.filter(p => p.id !== photo.id);
+                render();
+            });
+
+            return card;
+        }
+
+        // ---```javascript
+            // --- Add photo handler ---
+            addForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const url = urlInput.value.trim();
+                if (!url) return;
+                const newPhoto = {
+                    id: nextId++,
+                    url: url,
+                    tags: []
+                };
+                photos.push(newPhoto);
+                urlInput.value = '';
+                render();
+            });
+
+            // --- Filter handler ---
+            filterInput.addEventListener('input', function() {
+                currentFilter = filterInput.value;
+                render();
+            });
+
+            // --- Initial render ---
+            render();
+        })();
+    </script>
+</body>
+</html>
